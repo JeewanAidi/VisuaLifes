@@ -1,5 +1,8 @@
 # tests/test_ops.py
 import numpy as np
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from visualife.core.engine import matrix_multiply, elementwise_multiply, sum_array
 
 def test_matrix_multiply():
