@@ -3,8 +3,8 @@ import numpy as np
 class MeanSquaredError:
     """
     Mean Squared Error loss for regression tasks.
-    forward: L = 1/n * Σ(y_true - y_pred)²
-    backward: dL/dy_pred = -2/n * (y_true - y_pred)
+    L = 1/n * Σ(y_true - y_pred)²
+    dL/dy_pred = -2/n * (y_true - y_pred)
     """
     def forward(self, y_pred, y_true):
         self.y_pred = y_pred
@@ -26,8 +26,7 @@ class BinaryCrossEntropy:
         self.batch_size = None
     
     def forward(self, y_pred, y_true):
-        # Clip predictions to avoid log(0)
-        y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
+        y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)  # stability
         self.y_pred = y_pred
         self.y_true = y_true
         self.batch_size = y_true.shape[0]
@@ -36,19 +35,16 @@ class BinaryCrossEntropy:
         return loss
     
     def backward(self):
-        # Gradient: (y_pred - y_true) / (batch_size * y_pred * (1 - y_pred))
-        grad = (self.y_pred - self.y_true) / (self.batch_size * self.y_pred * (1 - self.y_pred) + 1e-15)
-        grad = np.clip(grad, -1e10, 1e10)  # extra stability
-        return grad
+        return (self.y_pred - self.y_true) / self.batch_size
 
 
 class CrossEntropyLoss:
     """
     Categorical Cross Entropy loss for multi-class classification.
     Supports both one-hot and sparse integer labels.
+    NOTE: Use with Softmax in forward pass. Do not call Softmax.backward().
     """
     def forward(self, y_pred, y_true):
-        # Clip predictions to avoid log(0)
         y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
         self.y_pred = y_pred
         self.y_true = y_true

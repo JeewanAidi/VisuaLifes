@@ -54,7 +54,6 @@ class Swish:
         return self.output
     
     def backward(self, dZ, learning_rate=None):
-        # Gradient: f'(x) = sigmoid(x) + output * (1 - sigmoid(x))
         grad = self.sigmoid + self.output * (1 - self.sigmoid)
         return dZ * grad
 
@@ -76,8 +75,7 @@ class Softmax:
         return self.output
     
     def backward(self, dZ, learning_rate=None):
-        # Typically combined with cross-entropy loss, backward is handled by loss
-        return dZ
+        return dZ  # handled by CrossEntropyLoss
 
 
 class Tanh:
