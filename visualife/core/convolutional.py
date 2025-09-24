@@ -55,8 +55,8 @@ class Conv2D:
         self.padding = padding
         self.filters = None
         self.bias = None
-        self.d_filters = None
-        self.d_bias = None
+        self.d_filters = None  # Store gradients for optimizer
+        self.d_bias = None     # Store gradients for optimizer
 
     def initialize_parameters(self, input_channels):
         scale = np.sqrt(2.0 / (self.filter_size * self.filter_size * input_channels))
@@ -72,38 +72,33 @@ class Conv2D:
         N, H, W, C = X.shape
 
         self.X_col = im2col(X, self.filter_size, self.filter_size, self.padding, self.stride)
-        W_col = self.filters.reshape(self.num_filters, -1)  # ✅ reshape
+        W_col = self.filters.reshape(self.num_filters, -1)
         out = W_col @ self.X_col + self.bias
 
         out_h = (H + 2*self.padding - self.filter_size) // self.stride + 1
         out_w = (W + 2*self.padding - self.filter_size) // self.stride + 1
         out = out.reshape(self.num_filters, out_h, out_w, N)
-        out = out.transpose(3, 1, 2, 0)  # (N, out_h, out_w, num_filters)
-        self.out = out
+        out = out.transpose(3, 1, 2, 0)
         return out
 
-    def backward(self, d_out, learning_rate=0.001):
+    def backward(self, d_out, learning_rate=None):  # Remove inline update
         N, H, W, C = self.X_shape
         d_out_reshaped = d_out.transpose(3, 1, 2, 0).reshape(self.num_filters, -1)
 
-        dW = d_out_reshaped @ self.X_col.T
-        self.d_filters = dW.reshape(self.filters.shape)  # ✅ store gradients
+        # Compute gradients (store for optimizer)
+        self.d_filters = (d_out_reshaped @ self.X_col.T).reshape(self.filters.shape)
         self.d_bias = np.sum(d_out_reshaped, axis=1, keepdims=True)
 
+        # Compute gradient for input
         W_col = self.filters.reshape(self.num_filters, -1)
         dX_col = W_col.T @ d_out_reshaped
-        dX = col2im(dX_col, self.X_shape, self.filter_size, self.filter_size, self.padding, self.stride)
+        dX = col2im(dX_col, self.X_shape, self.filter_size, self.filter_size, 
+                   self.padding, self.stride)
+        
+        return dX  # Let optimizer handle the update
 
-        # inline update
-        self.filters -= learning_rate * self.d_filters
-        self.bias -= learning_rate * self.d_bias
-        return dX
-
-    def update(self, learning_rate=0.001):  # ✅ new method
-        if self.d_filters is not None and self.d_bias is not None:
-            self.filters -= learning_rate * self.d_filters
-            self.bias -= learning_rate * self.d_bias
-
+    def regularization_loss(self):
+        return 0.0  # Add this method for compatibility
 
 
 # ============================================================
