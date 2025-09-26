@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import sys
 from visualife.core.losses import CrossEntropyLoss, MeanSquaredError, BinaryCrossEntropy
 from visualife.core.optimizers import SGD, Momentum, Adam
 from visualife.core.callbacks import EarlyStopping, LearningRateScheduler
@@ -41,6 +42,53 @@ class Model:
 
         print(f"Model compiled with {loss}, optimizer={optimizer}, lr={learning_rate}")
 
+    def initialize_weights(self, input_shape):
+        """
+        Initialize all layer weights using He initialization before training starts
+        """
+        print("🔧 Initializing model weights with He initialization...")
+        
+        # Run a dummy forward pass to trigger weight initialization
+        dummy_input = np.random.randn(1, *input_shape).astype(np.float32)
+        current_output = dummy_input
+        
+        for i, layer in enumerate(self.layers):
+            if hasattr(layer, 'initialize_parameters'):
+                # For layers that need explicit input shape
+                if hasattr(layer, 'input_size'):  # Dense layer
+                    layer.initialize_parameters()
+                else:  # Conv2D layer
+                    if hasattr(current_output, 'shape'):
+                        input_channels = current_output.shape[-1]
+                        layer.initialize_parameters(input_channels)
+            
+            # Forward pass to get output shape for next layer
+            if hasattr(layer, 'forward'):
+                current_output = layer.forward(current_output)
+        
+        # Verify weights are initialized
+        total_params = self.count_parameters()
+        print(f"✅ Model weights initialized - {total_params} parameters")
+        return total_params
+
+    def count_parameters(self):
+        """Count total trainable parameters"""
+        total_params = 0
+        for i, layer in enumerate(self.layers):
+            if hasattr(layer, 'filters') and layer.filters is not None:
+                total_params += np.prod(layer.filters.shape)
+            if hasattr(layer, 'bias') and layer.bias is not None:
+                total_params += np.prod(layer.bias.shape)
+            if hasattr(layer, 'weights') and layer.weights is not None:
+                total_params += np.prod(layer.weights.shape)
+            if hasattr(layer, 'biases') and layer.biases is not None:
+                total_params += np.prod(layer.biases.shape)
+            if hasattr(layer, 'gamma') and layer.gamma is not None:
+                total_params += np.prod(layer.gamma.shape)
+            if hasattr(layer, 'beta') and layer.beta is not None:
+                total_params += np.prod(layer.beta.shape)
+        return total_params
+
     def forward(self, X, training=True):
         out = X
         for layer in self.layers:
@@ -53,26 +101,19 @@ class Model:
         grad = dZ
         for layer in reversed(self.layers):
             if hasattr(layer, 'backward'):
-                # Pass learning_rate only if layer has trainable parameters
                 if hasattr(layer, 'weights') or hasattr(layer, 'gamma'):
                     grad = layer.backward(grad, self.optimizer.learning_rate)
                 else:
                     grad = layer.backward(grad)
-
-        # Batch update of all trainable parameters in one vectorized pass
         for layer in self.layers:
             if hasattr(layer, 'weights') and hasattr(layer, 'dweights') and layer.dweights is not None:
                 self.optimizer.update(layer)
-
         return grad
 
     def compute_loss(self, y_pred, y_true):
-        # Forward loss
         loss = self.loss_function.forward(y_pred, y_true)
-        # Regularization loss
         reg_loss = sum(layer.regularization_loss() for layer in self.layers if hasattr(layer, 'regularization_loss'))
         loss += reg_loss
-        # Vectorized backward
         dZ = self.loss_function.backward()
         return loss, dZ
 
@@ -80,8 +121,6 @@ class Model:
         y_pred = self.forward(X_batch, training=True)
         loss, dZ = self.compute_loss(y_pred, y_batch)
         self.backward(dZ)
-
-        # Accuracy vectorized
         if y_batch.shape[1] > 1:
             predictions = np.argmax(y_pred, axis=1)
             true_labels = np.argmax(y_batch, axis=1)
@@ -93,6 +132,10 @@ class Model:
 
     def fit(self, X_train, y_train, epochs=10, batch_size=32,
             validation_data=None, callbacks=None, verbose=1):
+        # Initialize weights if not already done
+        if self.count_parameters() == 0:
+            self.initialize_weights(X_train.shape[1:])
+            
         n_samples = X_train.shape[0]
         n_batches = int(np.ceil(n_samples / batch_size))
         callbacks = callbacks or []
@@ -127,7 +170,6 @@ class Model:
             self.history['train_accuracy'].append(epoch_acc)
             self.history['learning_rate'].append(self.optimizer.learning_rate)
 
-            # Validation
             if validation_data:
                 X_val, y_val = validation_data
                 val_loss, val_acc = self.evaluate(X_val, y_val, verbose=0)
@@ -140,14 +182,12 @@ class Model:
                 val_str = f", Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}" if validation_data else ""
                 print(f"Epoch {epoch+1}/{epochs} - Loss: {epoch_loss:.4f}, Acc: {epoch_acc:.4f}{val_str}, LR: {self.optimizer.learning_rate:.6f}")
 
-            # Callbacks
             if early_stopper and val_loss is not None and early_stopper.on_epoch_end(epoch, val_loss, self):
                 print(f"Early stopping at epoch {epoch+1}")
                 break
             if lr_scheduler and val_loss is not None:
                 lr_scheduler.on_epoch_end(epoch, val_loss, self, self.optimizer)
 
-        # Return history object
         class History:
             def __init__(self, history_dict):
                 self.history = history_dict
@@ -181,30 +221,86 @@ class Model:
         else:
             return (y_pred > 0.5).astype(int)
 
-    # --- Save & Load ---
     def save(self, filepath):
+        """
+        Save full model: architecture, weights, optimizer, history.
+        """
         model_data = {
             'layers': [],
-            'optimizer': {'learning_rate': self.optimizer.learning_rate},
+            'optimizer': None,
             'history': self.history
         }
+
         for layer in self.layers:
-            layer_dict = {}
-            for attr in ['weights', 'biases', 'gamma', 'beta', 'running_mean', 'running_var']:
-                if hasattr(layer, attr):
-                    layer_dict[attr] = getattr(layer, attr).copy()
+            layer_dict = {
+                'class_name': layer.__class__.__name__,
+                'config': layer.get_config() if hasattr(layer, 'get_config') else {},
+                'weights': {}
+            }
+            
+            # Handle different layer types and their weight attribute names
+            weight_attrs = []
+            if hasattr(layer, 'filters'):  # Conv2D
+                weight_attrs = ['filters', 'bias']
+            elif hasattr(layer, 'weights'):  # Dense
+                weight_attrs = ['weights', 'biases']
+            elif hasattr(layer, 'gamma'):  # BatchNorm
+                weight_attrs = ['gamma', 'beta', 'running_mean', 'running_var']
+            else:  # Activation layers, etc.
+                weight_attrs = []
+            
+            for attr in weight_attrs:
+                if hasattr(layer, attr) and getattr(layer, attr) is not None:
+                    layer_dict['weights'][attr] = getattr(layer, attr).copy()
+            
             model_data['layers'].append(layer_dict)
+
+        if self.optimizer is not None:
+            model_data['optimizer'] = {
+                'class_name': self.optimizer.__class__.__name__,
+                'learning_rate': self.optimizer.learning_rate
+            }
+
         with open(filepath, 'wb') as f:
             pickle.dump(model_data, f)
-        print(f"Model saved to {filepath}")
+        print(f"✅ Model fully saved to {filepath}")
 
     def load(self, filepath):
+        """
+        Load full model: reconstruct layers from saved architecture + load weights + optimizer.
+        """
         with open(filepath, 'rb') as f:
             model_data = pickle.load(f)
-        for layer, layer_dict in zip(self.layers, model_data['layers']):
-            for attr, val in layer_dict.items():
-                setattr(layer, attr, val.copy())
-        if 'optimizer' in model_data:
-            self.optimizer.learning_rate = model_data['optimizer']['learning_rate']
-        if 'history' in model_data:
-            self.history = model_data['history']
+
+        self.layers = []
+        for layer_dict in model_data['layers']:
+            class_name = layer_dict['class_name']
+            config = layer_dict['config']
+
+            # Reconstruct layer
+            LayerClass = getattr(sys.modules['visualife.core.layers'], class_name, None) \
+                        or getattr(sys.modules['visualife.core.convolutional'], class_name, None) \
+                        or getattr(sys.modules['visualife.core.activations'], class_name, None)
+            if LayerClass is None:
+                raise ValueError(f"Unknown layer class: {class_name}")
+
+            layer = LayerClass(**config) if config else LayerClass()
+
+            # Load weights - handle different attribute names
+            for attr, val in layer_dict['weights'].items():
+                if hasattr(layer, attr):
+                    setattr(layer, attr, val.copy())
+                else:
+                    print(f"⚠️ Warning: Layer {class_name} has no attribute '{attr}'")
+
+            self.layers.append(layer)
+
+        # Load optimizer
+        opt_data = model_data.get('optimizer')
+        if opt_data:
+            OptimizerClass = getattr(sys.modules['visualife.core.optimizers'], opt_data['class_name'])
+            self.optimizer = OptimizerClass(opt_data['learning_rate'])
+
+        # Load history
+        self.history = model_data.get('history', {})
+        print(f"✅ Model fully loaded from {filepath}")

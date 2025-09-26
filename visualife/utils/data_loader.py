@@ -2,53 +2,71 @@
 import os
 import numpy as np
 from PIL import Image
-from sklearn.model_selection import train_test_split
+import random
 
 class DataLoader:
-    def __init__(self, dataset_path, img_size=(128, 128), test_ratio=0.2):
+    def __init__(self, data_dir, img_size=(128, 128), batch_size=32,
+                 num_classes=None, shuffle=True):
         """
-        dataset_path: path to dataset folder (subfolders = class names)
-        img_size: (width, height) for resizing images
-        test_ratio: fraction of data to use for testing
+        data_dir: folder path with subfolders as class names
+        img_size: (width, height) for resizing
+        batch_size: number of images per batch
+        num_classes: number of classes (auto-detected if None)
+        shuffle: shuffle dataset every epoch
         """
-        self.dataset_path = dataset_path
+        self.data_dir = data_dir
         self.img_size = img_size
-        self.test_ratio = test_ratio
+        self.batch_size = batch_size
+        self.shuffle = shuffle
 
-        # automatically get class names from folder names
-        self.class_names = sorted(os.listdir(dataset_path))
-        self.num_classes = len(self.class_names)
-        print(f"Found classes: {self.class_names}")
+        # Load all file paths
+        self.class_names = sorted(os.listdir(data_dir))
+        self.num_classes = num_classes or len(self.class_names)
 
-    def load_data(self):
-        X, y = [], []
-
+        self.samples = []
         for idx, class_name in enumerate(self.class_names):
-            class_path = os.path.join(self.dataset_path, class_name)
+            class_path = os.path.join(data_dir, class_name)
             if not os.path.isdir(class_path):
                 continue
+            for fname in os.listdir(class_path):
+                self.samples.append((os.path.join(class_path, fname), idx))
 
-            for file in os.listdir(class_path):
-                file_path = os.path.join(class_path, file)
-                try:
-                    img = Image.open(file_path).convert('RGB')
-                    img = img.resize(self.img_size)
-                    X.append(np.array(img) / 255.0)  # normalize
-                    y.append(idx)
-                except Exception as e:
-                    print(f"Error loading {file_path}: {e}")
+        print(f"📂 Found {len(self.samples)} images in {len(self.class_names)} classes: {self.class_names}")
+
+        self.index = 0
+        if self.shuffle:
+            random.shuffle(self.samples)
+
+    def __iter__(self):
+        self.index = 0
+        if self.shuffle:
+            random.shuffle(self.samples)
+        return self
+
+    def __next__(self):
+        if self.index >= len(self.samples):
+            raise StopIteration
+
+        batch_samples = self.samples[self.index:self.index + self.batch_size]
+        X, y = [], []
+
+        for filepath, label in batch_samples:
+            try:
+                img = Image.open(filepath).convert("RGB")
+                img = img.resize(self.img_size)
+                X.append(np.array(img) / 255.0)
+                y_vec = np.zeros(self.num_classes)
+                y_vec[label] = 1
+                y.append(y_vec)
+            except Exception as e:
+                print(f"⚠️ Skipping {filepath}, error: {e}")
+
+        self.index += self.batch_size
 
         X = np.array(X, dtype=np.float32)
-        y = np.array(y)
+        y = np.array(y, dtype=np.float32)
 
-        # One-hot encode labels
-        y_onehot = np.zeros((y.shape[0], self.num_classes))
-        y_onehot[np.arange(y.shape[0]), y] = 1
+        return X, y
 
-        # Split train/test
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y_onehot, test_size=self.test_ratio, random_state=42, shuffle=True
-        )
-
-        print(f"Total images: {len(X)}, Train: {len(X_train)}, Test: {len(X_test)}")
-        return X_train, y_train, X_test, y_test
+    def __len__(self):
+        return int(np.ceil(len(self.samples) / self.batch_size))
