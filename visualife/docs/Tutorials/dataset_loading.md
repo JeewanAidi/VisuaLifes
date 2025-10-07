@@ -85,9 +85,10 @@ This is the foundation for all image classification tasks with VisuaLife.
 
 ## Next Steps
 
-- **Train a complete model** → See `training.md`
-- **Explore API Reference** → Check available layers and functions
-- **Try advanced examples** → See `06_Examples.md`
+- [**Train a complete model →**](training.md) See `training.md`  
+- [**Explore API Reference →**](Apis/layers.md) Check available layers and functions  
+- [**Try advanced examples →**](nlp_training_mnist.md) See `nlp_training_mnist.md`
+
 
 
 © 2025 VisuaLife | Written by Jeewan Aidi

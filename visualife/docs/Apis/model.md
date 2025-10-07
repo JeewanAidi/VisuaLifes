@@ -164,9 +164,10 @@ print(preds)
 
 ## Next Steps
 
-- [Layers API Reference →](#)
-- [Utils API Reference →](#)
-- [CIFAR-10 Tutorial →](#)
+- [Layers API Reference →](Apis/layers.md)
+- [Utils API Reference →](Apis/utils.md)
+- [Losses Activation and Optimizers →](Apis/losses_activation_optimizers.md)
+- [Tutorial →](Tutorials/basic_network.md)
 
 
 © 2025 VisuaLife | Written by Jeewan Aidi

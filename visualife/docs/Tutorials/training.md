@@ -100,9 +100,10 @@ plt.show()
 
 ## Next Steps
 
-- **Load real datasets** → See `dataset_loading.md`
-- **Build more complex networks** → See `basic_network.md`
-- **Check API reference** → Explore layer classes and functions
+- [**Load real datasets →**](dataset_loading.md) See `dataset_loading.md`  
+- [**Build more basic networks →**](basic_network.md) See `basic_network.md`  
+- [**Check API reference →**](Apis/layers.md) Explore layer classes and functions
+
 
 
 © 2025 VisuaLife | Written by Jeewan Aidi

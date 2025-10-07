@@ -128,8 +128,8 @@ You’ll see your documentation website live — just like TensorFlow’s docs.
 ##  Next Steps
 Continue with:
 
-- [Getting Started](#)
-- [Architecture Overview](#)
+- [Getting Started](Getting_Started.md)
+- [Architecture Overview](Architecture.md)
 
 
 © 2025 VisuaLife | Documentation maintained by Jeewan Aidi

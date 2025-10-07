@@ -116,8 +116,10 @@ This flexibility allows building any feed-forward or convolutional network.
 
 ## Next Steps
 
-- Model API Reference →
-- Utils API Reference →
-- Try layers in Tutorials →
+- [Model API Reference →](Apis/layers.md) 
+- [Utils API Reference →](Apis/utils.md)  
+- [Losses Activation and Optimizers →](Apis/losses_activation_optimizers.md)
+- [Try layers in Tutorials →](Tutorials/basic_network.md)
+
 
 © 2025 VisuaLife | Written by Jeewan Aidi

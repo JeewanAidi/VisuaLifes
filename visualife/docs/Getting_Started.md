@@ -90,9 +90,11 @@ You just:
 
 This is your first working neural network using VisuaLife built from scratch!
 
-##  Next Steps
-- Learn about Architecture
-- Explore Tutorials
-- Check API References
+## Next Steps
+
+- [Learn about Architecture →](Architecture.md)
+- [Explore Tutorials →](Tutorials/basic_network.md)
+- [Check API References →](Apis/layers.md)
+
 
 © 2025 VisuaLife | Created by Jeewan Aidi

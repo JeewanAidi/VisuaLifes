@@ -1,0 +1,98 @@
+site_name: VisuaLife
+site_description: A Custom Deep Learning Framework from Scratch for AI Education and Assistive Vision
+site_author: Jeewan Aidi
+repo_url: https://github.com/JeewanAidi/VisuaLifes
+repo_name: VisuaLifes
+site_url: https://JeewanAidi.github.io/VisuaLife/
+
+# Theme Configuration
+theme:
+  name: material
+  language: en
+  palette:
+    - scheme: default
+      primary: blue
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+  icon:
+    logo: material/robot
+    repo: fontawesome/brands/github
+  favicon: assets/favicon.png
+  logo: assets/logo.png
+
+# Markdown Extensions
+markdown_extensions:
+  - admonition
+  - footnotes
+  - attr_list
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed
+  - pymdownx.tasklist
+  - pymdownx.emoji
+  - pymdownx.snippets
+
+# Navigation Sidebar
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Introduction: introduction.md
+      - Installation: installation.md
+      - Quickstart Example: quickstart.md
+  - Core Concepts:
+      - Model API: model.md
+      - Layers API: layers.md
+      - Utils API: utils.md
+      - Dataset Loading: dataset_loading.md
+  - Tutorials:
+      - MLP Training (MNIST): nlp_training_mnist.md
+      - CIFAR10 Classification: cifar10_classification.md
+  - Contributing:
+      - How to Contribute: contributing.md
+      - Code Guidelines: code_guidelines.md
+  - FAQ: FAQ.md
+  - License: license.md
+  - About: about.md
+
+# Plugins (Windows-compatible)
+plugins:
+  # - search
+  # - mkdocs_minify_plugin   # <-- Commented for Windows, can enable after GitHub install
+  # - mkdocs_git_revision_date_localized_plugin:
+  #     enable_creation_date: true
+
+# Extra Configuration
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/JeewanAidi
+    - icon: fontawesome/brands/linkedin
+      link: https://linkedin.com/in/<your-linkedin-id>
+    - icon: fontawesome/brands/twitter
+      link: https://x.com/<your-twitter-id>
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX
+
+copyright: © 2025 VisuaLife | Developed by Jeewan Aidi

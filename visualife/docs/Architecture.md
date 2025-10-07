@@ -210,11 +210,12 @@ Every class and function is written to show how deep learning works inside, not 
 ```
 Each component talks to the next — forming a complete neural network engine.
 
-##  Next Steps
+## Next Steps
 
-- Try a hands-on Tutorial
-- Explore API Reference
-- Read Examples
+- [Try a hands-on Tutorial →](Tutorials/basic_network.md)
+- [Explore API Reference →](Apis/layers.md)
+- [Read Examples →](nlp_training_mnist.md)
+
 
 
 © 2025 VisuaLife | Written by Jeewan Aidi

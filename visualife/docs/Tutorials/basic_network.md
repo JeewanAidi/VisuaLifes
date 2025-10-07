@@ -98,11 +98,12 @@ You have learned to:
 This is the first step toward more complex tasks like image classification.
 
 
-##  Next Steps
+## Next Steps
 
-- **Training Tutorial →** Learn more about epochs, batch sizes, and optimizers
-- **Dataset Loading →** How to load CIFAR-10 and other datasets
-- **API Reference →** Explore all available classes, layers, and functions in VisuaLife
+- [**Training Tutorial →**](nlp_training_mnist.md) Learn more about epochs, batch sizes, and optimizers  
+- [**Dataset Loading →**](Apis/utils.md) How to load CIFAR-10 and other datasets  
+- [**API Reference →**](Apis/layers.md) Explore all available classes, layers, and functions in VisuaLife
+
 
 
 © 2025 VisuaLife | Written by Jeewan Aidi
