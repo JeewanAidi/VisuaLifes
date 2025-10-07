@@ -108,4 +108,4 @@ collector.save("results/metrics.pkl")
 
 ##  Next
 
-[nlp_training_mnist.md →](nlp_training_mnist.md)
+[nlp_training_mnist.md →](Tutorials/nlp_training_mnist.md)
